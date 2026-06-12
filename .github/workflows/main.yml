@@ -17,9 +17,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt update
+          apt update
 
-          sudo apt install -y \
+          apt install -y \
           git curl wget unzip zip \
           python3 python-is-python3 \
           build-essential \
