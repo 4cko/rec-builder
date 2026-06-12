@@ -1,76 +1,87 @@
 name: Build TWRP Moon
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+
+    container:
+      image: debian:12
 
     env:
-      USE_CCACHE: 1
-      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      DEBIAN_FRONTEND: noninteractive
 
     steps:
-    # 1. Checkout workflow repo
-    - name: Checkout workflow repo
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # 2. Install dependencies + repo tool
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y git-core gnupg flex bison build-essential \
-        zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 \
-        lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev ccache \
-        libgl1-mesa-dev libxml2-utils xsltproc unzip python3
-        # Install repo binary
-        mkdir -p ~/bin
-        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-        chmod a+x ~/bin/repo
-        echo 'export PATH=~/bin:$PATH' >> $GITHUB_ENV
+      - name: Install dependencies
+        run: |
+          dpkg --add-architecture i386
+          apt update
 
-    # 3. Initialize TWRP repo dari minimal manifest
-    - name: Initialize TWRP repo
-      run: |
-        mkdir -p ~/twrp
-        cd ~/twrp
-        repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp -b twrp-12.1
-        repo sync --force-sync --no-clone-bundle --quiet
+          apt install -y \
+          git curl wget unzip zip \
+          python3 python-is-python3 \
+          build-essential \
+          gcc-multilib g++-multilib \
+          libc6-dev-i386 \
+          lib32ncurses6-dev \
+          lib32z1-dev \
+          zlib1g-dev \
+          flex bison \
+          libxml2-utils \
+          xsltproc \
+          ccache \
+          rsync \
+          bc
 
-    # 4. Checkout Moon device tree
-    - name: Checkout Moon device tree
-      run: |
-        mkdir -p ~/twrp/device/xiaomi
-        git clone https://github.com/4cko/android_device_xiaomi_moon.git ~/twrp/device/xiaomi/moon
+      - name: Install repo
+        run: |
+          curl https://storage.googleapis.com/git-repo-downloads/repo -o /usr/local/bin/repo
+          chmod +x /usr/local/bin/repo
 
-    # 5. Setup build environment
-    - name: Setup build environment
-      run: |
-        cd ~/twrp
-        . build/envsetup.sh
-        lunch omni_moon-eng
+      - name: Init TWRP source
+        run: |
+          mkdir /twrp
+          cd /twrp
 
-    # 6. Build TWRP recovery & capture logs
-    - name: Build TWRP recovery
-      run: |
-        cd ~/twrp
-        mkdir -p $GITHUB_WORKSPACE/build_logs
-        mka recoveryimage 2>&1 | tee $GITHUB_WORKSPACE/build_logs/build.log
+          repo init \
+            -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp \
+            -b twrp-12.1
 
-    # 7. Upload recovery.img as artifact
-    - name: Upload recovery.img
-      uses: actions/upload-artifact@v4
-      with:
-        name: twrp-moon
-        path: ~/twrp/out/target/product/moon/recovery.img
+          repo sync -j$(nproc) --force-sync --no-clone-bundle
 
-    # 8. Upload build logs
-    - name: Upload build logs
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-logs
-        path: $GITHUB_WORKSPACE/build_logs/build.log
+      - name: Clone device tree
+        run: |
+          mkdir -p /twrp/device/xiaomi
+
+          git clone \
+          https://github.com/4cko/android_device_xiaomi_moon.git \
+          /twrp/device/xiaomi/moon
+
+      - name: Build
+        run: |
+          cd /twrp
+
+          source build/envsetup.sh
+          lunch twrp_moon-eng
+
+          mka recoveryimage | tee build.log
+
+      - name: Upload recovery
+        uses: actions/upload-artifact@v4
+        with:
+          name: twrp-moon
+          path: |
+            /twrp/out/target/product/moon/*.img
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-logs
+          path: |
+            /twrp/build.log
