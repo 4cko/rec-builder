@@ -13,10 +13,12 @@ LOGDIR="$PWD/build_logs"
 # ===== STEP 1: Install dependencies =====
 echo "Installing dependencies..."
 sudo apt update
-sudo apt install -y git-core gnupg flex bison build-essential \
-zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 \
-lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev ccache \
-libgl1-mesa-dev libxml2-utils xsltproc unzip python3
+sudo apt install -y git curl unzip wget flex bison build-essential \
+zip zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 \
+lib32ncurses5-dev lib32z1-dev ccache libxml2-utils python3
+
+# Optional: GUI libs for TWRP (if needed)
+sudo apt install -y libgl1-mesa-dev libx11-dev x11proto-core-dev xsltproc
 
 # ===== STEP 2: Install repo tool =====
 echo "Installing repo tool..."
