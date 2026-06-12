@@ -24,11 +24,9 @@ echo "========================================"
 echo "Installing dependencies"
 echo "========================================"
 
-sudo dpkg --add-architecture i386 || true
+apt update
 
-sudo apt update
-
-sudo apt install -y \
+apt install -y \
 git git-lfs curl wget rsync bc \
 build-essential flex bison gperf \
 zip unzip \
