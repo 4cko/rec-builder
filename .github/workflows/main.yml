@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     container:
-      image: debian:11
+      image: ubuntu:focal
 
     env:
       DEBIAN_FRONTEND: noninteractive
