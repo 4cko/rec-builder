@@ -31,7 +31,6 @@ git git-lfs curl wget rsync bc \
 build-essential flex bison gperf \
 zip unzip \
 gcc-multilib g++-multilib \
-libc6-dev-i386 \
 lib32z1-dev \
 zlib1g-dev \
 libncurses-dev \
@@ -41,7 +40,8 @@ libxml2-utils \
 xsltproc \
 ccache \
 python3 \
-python-is-python3
+python-is-python3 \
+sudo
 
 # =====================================================
 # INSTALL REPO TOOL
