@@ -15,7 +15,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          dpkg --add-architecture i386
           apt update
 
           apt install -y \
@@ -23,8 +22,6 @@ jobs:
           python3 python-is-python3 \
           build-essential \
           gcc-multilib g++-multilib \
-          libc6-dev-i386 \
-          lib32ncurses6-dev \
           lib32z1-dev \
           zlib1g-dev \
           flex bison \
