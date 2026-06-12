@@ -1,0 +1,71 @@
+name: Build TWRP Moon
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      USE_CCACHE: 1
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+
+    steps:
+    # 1. Checkout workflow repo
+    - name: Checkout workflow repo
+      uses: actions/checkout@v3
+
+    # 2. Install dependencies
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y git-core gnupg flex bison build-essential \
+        zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 \
+        lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev ccache \
+        libgl1-mesa-dev libxml2-utils xsltproc unzip python3
+
+    # 3. Initialize TWRP repo dari minimal manifest
+    - name: Initialize TWRP repo
+      run: |
+        mkdir -p ~/twrp
+        cd ~/twrp
+        repo init -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp -b twrp-12.1
+        repo sync --force-sync
+
+    # 4. Checkout Moon device tree
+    - name: Checkout Moon device tree
+      run: |
+        mkdir -p ~/twrp/device/xiaomi
+        git clone https://github.com/4cko/android_device_xiaomi_moon.git ~/twrp/device/xiaomi/moon
+
+    # 5. Setup build environment
+    - name: Setup build environment
+      run: |
+        cd ~/twrp
+        . build/envsetup.sh
+        lunch omni_moon-eng
+
+    # 6. Build TWRP recovery & capture logs
+    - name: Build TWRP recovery
+      run: |
+        cd ~/twrp
+        mkdir -p $GITHUB_WORKSPACE/build_logs
+        mka recoveryimage 2>&1 | tee $GITHUB_WORKSPACE/build_logs/build.log
+
+    # 7. Upload recovery.img as artifact
+    - name: Upload recovery.img
+      uses: actions/upload-artifact@v3
+      with:
+        name: twrp-moon
+        path: ~/twrp/out/target/product/moon/recovery.img
+
+    # 8. Upload build logs
+    - name: Upload build logs
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs
+        path: $GITHUB_WORKSPACE/build_logs/build.log
